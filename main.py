@@ -6,6 +6,6 @@ import tables
 app = FastAPI()
 
 tables.Base.metadata.create_all(bind=engine)
-app.include_router(auth.router, tags=["auth"], prefix="/auth")
-app.include_router(todos.router, tags=["todos"], prefix="/todos")
 
+app.include_router(auth.router)
+app.include_router(todos.router)

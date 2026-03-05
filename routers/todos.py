@@ -1,11 +1,12 @@
-from fastapi import APIRouter, HTTPException, Body, status, Path
-from typing import List
+from fastapi import APIRouter, HTTPException, Body, status, Path, Depends
+from typing import List, Annotated
 from pydantic import BaseModel, Field
 from routers.dependencies import db_dependency
 from tables import Todos
+from routers.auth import get_current_user
 
-
-router = APIRouter()
+router = APIRouter(tags=["todos"], prefix="/todos")
+user_dependency = Annotated[dict, Depends(get_current_user)]
 
 
 class TodoResponse(BaseModel):
@@ -25,26 +26,32 @@ class TodoRequest(BaseModel):
 
 
 @router.get("", response_model=List[TodoResponse], status_code= status.HTTP_200_OK)
-def read_todos(db: db_dependency) -> List[TodoResponse]:
+def read_todos(db: db_dependency, user: user_dependency) -> List[TodoResponse]:
     todos = db.query(Todos).all()
     return [TodoResponse.model_validate(todo) for todo in todos]
 
 @router.get("/{todo_id}", response_model=TodoResponse, status_code= status.HTTP_200_OK)
-def read_todo(db: db_dependency, todo_id: int = Path(gt=0)) -> TodoResponse:
+def read_todo(db: db_dependency, user: user_dependency, todo_id: int = Path(gt=0)) -> TodoResponse:
     todo = (db.query(Todos).filter(Todos.id == todo_id).first())
     if not todo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Todo with id {todo_id} not found")
     return TodoResponse.model_validate(todo)
 
 @router.post("", status_code= status.HTTP_201_CREATED)
-def create_todo(db: db_dependency, todo_request: TodoRequest = Body()) -> None:
-    todo_model = Todos(**todo_request.model_dump())
+def create_todo(db: db_dependency, user: user_dependency, todo_request: TodoRequest = Body()) -> None:
+    todo_model = Todos(
+        title=todo_request.title,
+        description=todo_request.description,
+        priority=todo_request.priority,
+        completed=todo_request.is_completed,
+        owner_id=user.get("user_id")
+    )
     db.add(todo_model)
     db.commit()
 
 @router.put("/{todo_id}", status_code= status.HTTP_204_NO_CONTENT)
-def update_todo(db: db_dependency, todo_id: int = Path(gt=0), todo_request: TodoRequest = Body()) -> None:
-    todo = db.query(Todos).filter(Todos.id == todo_id).first()
+def update_todo(db: db_dependency, user: user_dependency, todo_id: int = Path(gt=0), todo_request: TodoRequest = Body()) -> None:
+    todo = db.query(Todos).filter(Todos.id == todo_id, Todos.owner_id == user.get("user_id")).first()
     if not todo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Todo with id {todo_id} not found")
     for key, value in todo_request.model_dump().items():
@@ -53,8 +60,8 @@ def update_todo(db: db_dependency, todo_id: int = Path(gt=0), todo_request: Todo
     db.commit()
 
 @router.delete("/{todo_id}", status_code= status.HTTP_204_NO_CONTENT)
-def delete_todo(db: db_dependency, todo_id: int = Path(gt=0)) -> None:
-    todo = db.query(Todos).filter(Todos.id == todo_id).first()
+def delete_todo(db: db_dependency, user: user_dependency, todo_id: int = Path(gt=0)) -> None:
+    todo = db.query(Todos).filter(Todos.id == todo_id, Todos.owner_id == user.get("user_id")).first()
     if not todo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Todo with id {todo_id} not found")
     db.delete(todo)
