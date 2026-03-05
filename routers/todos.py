@@ -27,12 +27,12 @@ class TodoRequest(BaseModel):
 
 @router.get("", response_model=List[TodoResponse], status_code= status.HTTP_200_OK)
 def read_todos(db: db_dependency, user: user_dependency) -> List[TodoResponse]:
-    todos = db.query(Todos).all()
+    todos = db.query(Todos).filter(Todos.owner_id == user.get("user_id")).all()
     return [TodoResponse.model_validate(todo) for todo in todos]
 
 @router.get("/{todo_id}", response_model=TodoResponse, status_code= status.HTTP_200_OK)
 def read_todo(db: db_dependency, user: user_dependency, todo_id: int = Path(gt=0)) -> TodoResponse:
-    todo = (db.query(Todos).filter(Todos.id == todo_id).first())
+    todo = (db.query(Todos).filter(Todos.id == todo_id, Todos.owner_id == user.get("user_id")).first())
     if not todo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Todo with id {todo_id} not found")
     return TodoResponse.model_validate(todo)
