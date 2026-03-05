@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Body, status, Path
 from database import SessionLocal
 from typing import List, Annotated
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from tables import Todos
@@ -37,14 +36,15 @@ class TodoRequest(BaseModel):
 
 @router.get("", response_model=List[TodoResponse], status_code= status.HTTP_200_OK)
 def read_todos(db: db_dependency) -> List[TodoResponse]:
-    return db.query(Todos).all()
+    todos = db.query(Todos).all()
+    return [TodoResponse.model_validate(todo) for todo in todos]
 
 @router.get("/{todo_id}", response_model=TodoResponse, status_code= status.HTTP_200_OK)
 def read_todo(db: db_dependency, todo_id: int = Path(gt=0)) -> TodoResponse:
     todo = (db.query(Todos).filter(Todos.id == todo_id).first())
     if not todo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Todo with id {todo_id} not found")
-    return todo
+    return TodoResponse.model_validate(todo)
 
 @router.post("", status_code= status.HTTP_201_CREATED)
 def create_todo(db: db_dependency, todo_request: TodoRequest = Body()) -> None:
