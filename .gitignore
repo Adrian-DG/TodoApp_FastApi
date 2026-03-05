@@ -1,0 +1,59 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Environment variables and secrets
+.env
+.flaskenv
+secrets.ini
+*.key
+*.pem
+
+# Specific to FastAPI/Uvicorn/Databases
+*.log
+test_db.db # Common name for a local SQLite test database
+coverage/
+.pytest_cache/
+
+# Editors and OS files
+.DS_Store           # macOS
+.vscode             # VS Code directory (optional, if you want to share settings)
+.idea               # PyCharm/IntelliJ
+# Other OS generated files
+*~
+.directory
+.Trash-*
+.nfs*
+*.xml
+*.db
+*.iml
