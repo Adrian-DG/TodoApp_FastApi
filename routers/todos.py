@@ -4,8 +4,6 @@ from pydantic import BaseModel, Field
 from routers.dependencies import db_dependency
 from routers.auth import get_current_user
 from tables import Todos
-
-from fastapi_pagination import Page, add_pagination, paginate
 from fastapi_pagination.ext.sqlalchemy import paginate as sqlalchemy_paginate
 
 
@@ -65,6 +63,7 @@ def read_todo(db: db_dependency, user: user_dependency, todo_id: int = Path(gt=0
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Todo with id {todo_id} not found")
     return TodoResponse.model_validate(todo)
 
+
 @router.post("", status_code= status.HTTP_201_CREATED)
 def create_todo(db: db_dependency, user: user_dependency, todo_request: TodoRequest = Body()) -> None:
     todo_model = Todos(
@@ -76,6 +75,7 @@ def create_todo(db: db_dependency, user: user_dependency, todo_request: TodoRequ
     )
     db.add(todo_model)
     db.commit()
+
 
 @router.put("/{todo_id}", status_code= status.HTTP_204_NO_CONTENT)
 def update_todo(db: db_dependency, user: user_dependency, todo_id: int = Path(gt=0), todo_request: TodoRequest = Body()) -> None:
