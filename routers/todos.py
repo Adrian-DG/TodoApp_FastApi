@@ -2,8 +2,13 @@ from fastapi import APIRouter, HTTPException, Body, status, Path, Depends
 from typing import List, Annotated
 from pydantic import BaseModel, Field
 from routers.dependencies import db_dependency
-from tables import Todos
 from routers.auth import get_current_user
+from tables import Todos
+
+from fastapi_pagination import Page, add_pagination, paginate
+from fastapi_pagination.ext.sqlalchemy import paginate as sqlalchemy_paginate
+
+
 
 router = APIRouter(tags=["todos"], prefix="/todos")
 user_dependency = Annotated[dict, Depends(get_current_user)]
@@ -18,6 +23,14 @@ class TodoResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PaginationFilterRequest(BaseModel):
+    page: int = Field(ge=1, default=1)
+    page_size: int = Field(ge=1, le=100, default=10)
+    param: str | None = Field(default=None)
+    is_completed: bool | None = Field(default=False)
+
 class TodoRequest(BaseModel):
     title: str = Field(min_length=2, max_length=50)
     description: str = Field(min_length=2, max_length=200)
@@ -25,10 +38,25 @@ class TodoRequest(BaseModel):
     is_completed: bool = Field(default=False)
 
 
-@router.get("", response_model=List[TodoResponse], status_code= status.HTTP_200_OK)
-def read_todos(db: db_dependency, user: user_dependency) -> List[TodoResponse]:
-    todos = db.query(Todos).filter(Todos.owner_id == user.get("user_id")).all()
+@router.get("", response_model=List[TodoResponse], status_code=status.HTTP_200_OK)
+def read_todos(db: db_dependency, user: user_dependency, filter_request: PaginationFilterRequest = Depends()) -> List[TodoResponse]:
+    """Retrieve all todos for the current user, or all todos if user is admin."""
+    query = db.query(Todos)
+
+    if user.get("role") != "admin":
+        query = query.filter(Todos.owner_id == user.get("user_id"))
+
+    if filter_request.param:
+        query = query.filter(Todos.title.contains(filter_request.param))
+
+    if filter_request.is_completed is not None:
+        query = query.filter(Todos.completed == filter_request.is_completed)
+
+    offset = (filter_request.page - 1) * filter_request.page_size
+    todos = query.offset(offset).limit(filter_request.page_size).all()
+
     return [TodoResponse.model_validate(todo) for todo in todos]
+
 
 @router.get("/{todo_id}", response_model=TodoResponse, status_code= status.HTTP_200_OK)
 def read_todo(db: db_dependency, user: user_dependency, todo_id: int = Path(gt=0)) -> TodoResponse:
