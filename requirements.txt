@@ -1,0 +1,10 @@
+# pip install -r requirements.txt
+
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+fastapi-pagination
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart

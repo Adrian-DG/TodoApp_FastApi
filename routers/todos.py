@@ -1,15 +1,13 @@
 from fastapi import APIRouter, HTTPException, Body, status, Path, Depends
-from typing import List, Annotated
+from typing import List
 from pydantic import BaseModel, Field
-from routers.dependencies import db_dependency
-from routers.auth import get_current_user
+from routers.dependencies import db_dependency, user_dependency
 from tables import Todos
-from fastapi_pagination.ext.sqlalchemy import paginate as sqlalchemy_paginate
 
 
 
 router = APIRouter(tags=["todos"], prefix="/todos")
-user_dependency = Annotated[dict, Depends(get_current_user)]
+
 
 
 class TodoResponse(BaseModel):
