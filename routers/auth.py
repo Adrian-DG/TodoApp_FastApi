@@ -6,6 +6,7 @@ Provides user registration, login, and JWT token validation helpers.
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 from fastapi import APIRouter, Depends, status, Body, HTTPException
+from enum import Enum
 from pydantic import BaseModel, Field
 from tables import Users
 from passlib.context import CryptContext
@@ -25,6 +26,12 @@ __ACCESS_TOKEN_EXPIRE_MINUTES = 30
 __bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 __oauth2_bearer = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
+class UserRole(str, Enum):
+    """Enumeration of user roles for access control."""
+
+    ADMIN = "admin"
+    USER = "user"
+
 class CreateUserRequest(BaseModel):
     """Request body for user registration."""
 
@@ -32,7 +39,8 @@ class CreateUserRequest(BaseModel):
     password: str = Field(min_length=3, max_length=20)
     first_name: str = Field(min_length=3, max_length=20)
     last_name: str = Field(min_length=3, max_length=20)
-    role: str
+    role: UserRole = Field(default=UserRole.USER)
+    phone_number: str | None = Field(default=None)
 
 class LoginRequest(BaseModel):
     """Request schema for JSON-based login (currently not used by endpoint)."""
@@ -84,7 +92,8 @@ def create_user(db: db_dependency, request: CreateUserRequest = Body()) -> None:
         hashed_password=__bcrypt_context.hash(request.password),
         first_name=request.first_name,
         last_name=request.last_name,
-        role=request.role
+        role=request.role,
+        phone_number=request.phone_number
     )
     # Persist user to database.
     db.add(new_user)
