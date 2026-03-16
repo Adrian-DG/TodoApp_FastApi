@@ -9,7 +9,6 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
-from routers.auth import get_current_user
 
 
 def get_db():
@@ -26,5 +25,5 @@ def get_db():
 
 # Typed dependency alias for DB session injection.
 db_dependency = Annotated[Session, Depends(get_db)]
-# Typed dependency alias for authenticated user payload injection.
-user_dependency = Annotated[dict, Depends(get_current_user)]
+
+

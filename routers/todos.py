@@ -6,7 +6,8 @@ Contains CRUD endpoints and filtering/pagination behavior for todo items.
 from fastapi import APIRouter, HTTPException, Body, status, Path, Depends
 from typing import List
 from pydantic import BaseModel, Field
-from routers.dependencies import db_dependency, user_dependency
+from routers.dependencies import db_dependency
+from routers.auth import user_dependency
 from tables import Todos
 
 
@@ -23,7 +24,7 @@ class TodoResponse(BaseModel):
     title: str
     description: str
     priority: int
-    completed: bool
+    complete: bool
 
     class Config:
         from_attributes = True
@@ -62,7 +63,7 @@ def read_todos(db: db_dependency, user: user_dependency, filter_request: Paginat
 
     # Optional completion-state filter.
     if filter_request.is_completed is not None:
-        query = query.filter(Todos.completed == filter_request.is_completed)
+        query = query.filter(Todos.complete == filter_request.is_completed)
 
     # Calculate SQL offset for page-based pagination.
     offset = (filter_request.page - 1) * filter_request.page_size
@@ -92,7 +93,7 @@ def create_todo(db: db_dependency, user: user_dependency, todo_request: TodoRequ
         title=todo_request.title,
         description=todo_request.description,
         priority=todo_request.priority,
-        completed=todo_request.is_completed,
+        complete=todo_request.is_completed,
         owner_id=user.get("user_id")
     )
     # Persist and commit the new todo.

@@ -35,6 +35,6 @@ class Todos(Base):
     description = Column(String, nullable=False)
     # Priority and completion state.
     priority = Column(Integer)
-    completed = Column(Boolean, default=False)
+    complete = Column(Boolean, default=False)
     # Owner relation to the users table.
     owner_id = Column(Integer, ForeignKey('users.id'), nullable=False)

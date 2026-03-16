@@ -5,6 +5,7 @@ uvicorn
 sqlalchemy
 pydantic
 fastapi-pagination
-passlib[bcrypt]
+passlib[bcrypt]==1.7.4
 python-jose[cryptography]
 python-multipart
+psycopg2-binary 

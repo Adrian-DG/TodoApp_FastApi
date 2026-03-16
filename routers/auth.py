@@ -72,6 +72,8 @@ def get_current_user(token: Annotated[str, Depends(__oauth2_bearer)]):
         # Any JWT parsing/verification issue is treated as unauthorized.
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token") from exc
 
+user_dependency = Annotated[dict, Depends(get_current_user)]
+
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def create_user(db: db_dependency, request: CreateUserRequest = Body()) -> None:
